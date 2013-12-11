@@ -2,24 +2,28 @@
 var fs = require('fs'),
 	stdin = process.stdin,
 	stdout = process.stdout;
-
+	
 /* Main program logic */
 fs.readdir(process.cwd(), function(err, files) {
-	if(!files.length) {
+	var filename,
+		length = files.length,
+		stats = [];
+	if(!length) {
 		return console.log('No files to show!\n');
 	}
 	console.log('Select the file or directory that you want to see:\n');
 	
 	function file(i) {  //displays each file in current directory
-		var filename = files[i];
+		filename = files[i];
 		fs.stat(__dirname + '/' + filename, function(err, stat) {
+			stats[i] = stat;
 			if(stat.isDirectory()) {
 				console.log(' '+i+' \033[36m'+ filename + '/\033[39m');
 			}
 			else {
 				console.log(' '+i+' \033[90m' + filename + '\033[39m');
 			}
-			if( ++i == files.length) {
+			if( ++i == length) {
 				read();
 			}
 			else {
@@ -37,11 +41,29 @@ fs.readdir(process.cwd(), function(err, files) {
 	}
 
 	function option(data) { //processes user input
-		if(!files[Number(data)]) {
+		var numData = Number(data);
+		if(!files[numData]) {
 			stdout.write('Enter your choice: ');
 		}
 		else {
 			stdin.pause();
+			filename = files[numData];
+			if(stats[numData].isDirectory()) {
+				fs.readdir(__dirname + '/' + filename, function(err, fls) {
+					console.log('');
+					console.log(' (' + fls.length + ' files)');
+					fls.forEach(function(file) {
+						console.log(' - ' + file);
+					});
+					console.log('');
+				});
+			}
+			else {
+				fs.readFile(__dirname + '/' + filename, 'utf8', function(err, data) {
+					console.log('');
+					console.log(data.replace(/(.*)/g, ' $1'));
+				});
+			}
 		}
 	}
 	
